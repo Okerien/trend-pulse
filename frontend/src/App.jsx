@@ -17,11 +17,20 @@ import ReportView from "./components/ReportView";
 import ContentStudio from "./components/ContentStudio";
 import CommandPalette from "./components/CommandPalette";
 import CopilotRail from "./components/CopilotRail";
+import Landing from "./components/Landing";
+import Tour from "./components/Tour";
 import { Bookmark, Search, Sparkle, Command } from "./components/Icons";
 
 export default function App() {
   const app = useApp();
   const { report, keywords, range, geo, data } = app;
+
+  // Show the landing page first, unless the visitor arrived via a share link
+  // (keywords in the URL) or an /app path.
+  const [entered, setEntered] = useState(
+    () => keywords.length > 0 || window.location.pathname.replace(/\/$/, "").endsWith("/app")
+  );
+  const [showTour, setShowTour] = useState(false);
 
   const [tab, setTab] = useState("tracker");
   const [detail, setDetail] = useState(null);
@@ -33,6 +42,19 @@ export default function App() {
   const [copilotQuery, setCopilotQuery] = useState(null);
 
   if (report) return <ReportView />;
+
+  function launch() {
+    setEntered(true);
+    if (!localStorage.getItem("trendpulse.tour")) {
+      setTimeout(() => setShowTour(true), 400); // let the dashboard mount first
+    }
+  }
+  function finishTour() {
+    localStorage.setItem("trendpulse.tour", "1");
+    setShowTour(false);
+  }
+
+  if (!entered) return <Landing onLaunch={launch} />;
 
   const openCopilot = (query) => { setCopilotQuery(query || null); setCopilotOpen(true); };
   const paletteActions = {
@@ -139,6 +161,8 @@ export default function App() {
           <Sparkle size={20} />
         </button>
       )}
+
+      {showTour && <Tour onDone={finishTour} />}
     </div>
   );
 }
